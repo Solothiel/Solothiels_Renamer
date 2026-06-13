@@ -28,7 +28,7 @@ class RenamerGui:
 
         header_title = tb.Label(
             header_frame,
-            text="☾ MOON KNIGHT FILE RENAMER ☽",
+            text="☾ Solothiel's File Renamer ☽",
             font=("Segoe UI", 16, "bold"),
             foreground="#FFFFFF",
             background="#0A0A0A"
@@ -167,7 +167,7 @@ class RenamerGui:
             yscrollcommand=scrollbar.set
         )
 
-        self.log("[SYSTEM] Moon Knight Renamer initialized.")
+        self.log("[SYSTEM] Solothiel's Renamer initialized.")
 
     def log(self, message):
         self.log_area.insert(tk.END, message + "\n")
