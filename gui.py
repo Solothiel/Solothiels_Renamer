@@ -5,98 +5,116 @@ from tkinter import filedialog, messagebox
 
 from renamer_core import generate_suggestions
 from file_utility import rename_file
-from history_manager import pop_last
-from tkinterdnd2 import DND_FILES
 
 
 class RenamerGui:
     def __init__(self, root):
         self.root = root
-        self.root.title("☾ Solothiel's Renamer ☽")
-        self.root.geometry("850x600")
+        self.root.title("☾ Moon Knight Excel Renamer ☽")
+        self.root.geometry("900x600")
 
         self.files = []
-        self.preview_data = []
+        self.row_map = {}  # tree item → file path
 
         self.build_ui()
-        self.enable_drag_drop()
 
-    # ---------------- UI ----------------
+    # ================= UI =================
     def build_ui(self):
 
         header = tb.Label(
             self.root,
-            text="☾ Solothiel's BATCH RENAMER ☽",
+            text="☾ EXCEL-STYLE BATCH RENAMER ☽",
             font=("Segoe UI", 18, "bold")
         )
         header.pack(pady=10)
 
+        # Buttons
         btn_frame = tb.Frame(self.root)
         btn_frame.pack(fill="x", padx=10)
 
         tb.Button(btn_frame, text="Add Files", bootstyle="primary", command=self.add_files).pack(side="left")
-        tb.Button(btn_frame, text="Undo Last", bootstyle="warning", command=self.undo).pack(side="left", padx=5)
         tb.Button(btn_frame, text="Rename All", bootstyle="success", command=self.rename_all).pack(side="right")
 
-        # Preview table
-        self.tree = tb.Treeview(self.root, columns=("old", "new"), show="headings", height=18)
-        self.tree.heading("old", text="Original File")
-        self.tree.heading("new", text="Suggested Name")
+        # ================= TABLE =================
+        self.tree = tb.Treeview(
+            self.root,
+            columns=("original", "new"),
+            show="headings",
+            height=20
+        )
+
+        self.tree.heading("original", text="Original File")
+        self.tree.heading("new", text="New Name (Double Click to Edit)")
+
+        self.tree.column("original", width=400)
+        self.tree.column("new", width=400)
+
         self.tree.pack(fill="both", expand=True, padx=10, pady=10)
 
-        self.log = tb.Text(self.root, height=8)
-        self.log.pack(fill="x", padx=10, pady=5)
+        # bind excel-style edit
+        self.tree.bind("<Double-1>", self.edit_cell)
 
-    # ---------------- Drag & Drop ----------------
-    def enable_drag_drop(self):
-        self.root.drop_target_register(DND_FILES)
-        self.root.dnd_bind("<<Drop>>", self.handle_drop)
+        # log
+        self.log = tb.Text(self.root, height=6)
+        self.log.pack(fill="x", padx=10)
 
-    def handle_drop(self, event):
-        files = self.root.tk.splitlist(event.data)
-        self.files.extend(files)
-        self.refresh_preview()
-
-    # ---------------- File Input ----------------
+    # ================= FILE INPUT =================
     def add_files(self):
         files = filedialog.askopenfilenames()
-        self.files.extend(files)
-        self.refresh_preview()
+        if not files:
+            return
 
-    # ---------------- Preview ----------------
-    def refresh_preview(self):
-        self.tree.delete(*self.tree.get_children())
-        self.preview_data = []
-
-        for f in self.files:
+        for f in files:
             base = os.path.basename(f)
             suggestion = generate_suggestions(base)
 
-            self.preview_data.append((f, suggestion))
-            self.tree.insert("", "end", values=(base, suggestion))
+            item = self.tree.insert("", "end", values=(base, suggestion))
+            self.row_map[item] = f
 
-    # ---------------- Rename ----------------
+        self.log.insert("end", f"Added {len(files)} files\n")
+
+    # ================= EXCEL EDITING =================
+    def edit_cell(self, event):
+        region = self.tree.identify("region", event.x, event.y)
+        if region != "cell":
+            return
+
+        row_id = self.tree.identify_row(event.y)
+        column = self.tree.identify_column(event.x)
+
+        # Only allow editing "new name" column (#2)
+        if column != "#2":
+            return
+
+        x, y, width, height = self.tree.bbox(row_id, column)
+        old_value = self.tree.set(row_id, "new")
+
+        entry = tb.Entry(self.root)
+        entry.place(x=x + 10, y=y + 80, width=width)
+        entry.insert(0, old_value)
+        entry.focus()
+
+        def save(event=None):
+            self.tree.set(row_id, "new", entry.get())
+            entry.destroy()
+
+        entry.bind("<Return>", save)
+        entry.bind("<FocusOut>", save)
+
+    # ================= RENAME =================
     def rename_all(self):
-        for old_path, new_name in self.preview_data:
+        for row in self.tree.get_children():
+            old_name, new_name = self.tree.item(row)["values"]
+            file_path = self.row_map[row]
+
             try:
-                new_path = rename_file(old_path, new_name)
-                self.log.insert("end", f"Renamed: {old_path} → {new_path}\n")
+                rename_file(file_path, new_name)
+                self.log.insert("end", f"Renamed: {old_name} → {new_name}\n")
+
             except Exception as e:
                 self.log.insert("end", f"Error: {e}\n")
 
-        self.files.clear()
-        self.refresh_preview()
+        self.tree.delete(*self.tree.get_children())
+        self.row_map.clear()
 
-    # ---------------- Undo ----------------
-    def undo(self):
-        last = pop_last()
-        if not last:
-            messagebox.showinfo("Undo", "Nothing to undo")
-            return
-
-        try:
-            from file_utility import undo_rename
-            undo_rename(last["old"], last["new"])
-            self.log.insert("end", f"Undo: {last['new']} → {last['old']}\n")
-        except Exception as e:
-            messagebox.showerror("Undo Error", str(e))
+        self.log.insert("end", "Batch complete\n")

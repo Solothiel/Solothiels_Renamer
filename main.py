@@ -7,8 +7,10 @@ if __name__ == "__main__":
     root = TkinterDnD.Tk()
     root.title("Solothiel's Renamer")
 
-    root = tb.Window(themename="cyborg", master=root)
+    style = tb.Style("cyborg")
 
     app = RenamerGui(root)
+
+    root.mainloop()
 
     root.mainloop()

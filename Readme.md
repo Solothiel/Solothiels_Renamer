@@ -1,16 +1,12 @@
 # Solothiel's Renamer
 
 ```aiignore
-RenamerApp/
+renamer_app/
 │
 ├── main.py
 ├── gui.py
 ├── renamer_core.py
 ├── file_utility.py
-│
-├── assets/
-│   ├── app_icon.ico
-│   └── moon_logo.png
-│
-└── README.md
+├── history_manager.py
+├── history.json   (auto-created)
 ```
