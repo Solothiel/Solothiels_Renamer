@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import ttkbootstrap as tb
@@ -181,7 +182,7 @@ class RenamerGui:
 
         self.file_path = file_path
 
-        filename = file_path.split("/")[-1]
+        filename = os.path.basename(file_path)
 
         self.label.config(text=filename)
 
@@ -210,46 +211,33 @@ class RenamerGui:
 
     def rename(self):
         if not self.file_path:
-            messagebox.showerror(
-                "Error",
-                "No file selected"
-            )
+            messagebox.showerror("Error", "No file selected")
             return
 
         new_name = self.entry.get().strip()
 
         if not new_name:
-            messagebox.showerror(
-                "Error",
-                "Please enter a filename."
-            )
+            messagebox.showerror("Error", "Please enter a filename.")
             return
 
+        # prevent users from breaking extension logic
+        new_name = os.path.splitext(new_name)[0]
+
         try:
-            rename_file(
-                self.file_path,
-                new_name
-            )
+            old_name = os.path.basename(self.file_path)
+
+            rename_file(self.file_path, new_name)
 
             self.status_label.config(
-                text=f"Rename operation complete: {new_name}"
+                text=f"{old_name} → {new_name}"
             )
 
-            self.log(
-                f"[SUCCESS] File renamed to: {new_name}"
-            )
+            self.log(f"[SUCCESS] {old_name} → {new_name}")
 
-            messagebox.showinfo(
-                "Success",
-                "File renamed successfully."
-            )
+            messagebox.showinfo("Success", "File renamed successfully.")
 
         except Exception as e:
             self.log(f"[ERROR] {e}")
-
-            messagebox.showerror(
-                "Rename Error",
-                str(e)
-            )
+            messagebox.showerror("Rename Error", str(e))
 
 
