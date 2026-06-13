@@ -10,7 +10,7 @@ from file_utility import rename_file
 class RenamerGui:
     def __init__(self, root):
         self.root = root
-        self.root.title("☾ Moon Knight Excel Renamer ☽")
+        self.root.title("☾ Solothiel's Renamer ☽")
         self.root.geometry("900x600")
 
         self.files = []
@@ -23,7 +23,7 @@ class RenamerGui:
 
         header = tb.Label(
             self.root,
-            text="☾ EXCEL-STYLE BATCH RENAMER ☽",
+            text="☾ Solothiel's RENAMER ☽",
             font=("Segoe UI", 18, "bold")
         )
         header.pack(pady=10)
